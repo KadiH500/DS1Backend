@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5000;
 
 // ------------------- MIDDLEWARES -------------------
 
-// Autorise les requêtes depuis ces adresses (front-end)
+// nautorisiw les requettes ml front
 app.use(cors({
   origin: ['http://localhost:4200', 'http://localhost:60398'], 
   methods: ['GET','POST','PUT','DELETE','PATCH'], 
@@ -28,14 +28,11 @@ app.use(cookieParser()); // nakraw l cookies
 app.use('/user', userRoute); 
 app.use('/auth', authRoute); 
 
-// ------------------- CONNEXION MONGODB -------------------
+// ------------------- connexion lel base -------------------
 const connect = async () => {
   try {
     // Connexion lel base mte3i ProjectManagement 
-    await mongoose.connect("mongodb://127.0.0.1:27017/ProjectManagement", {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+    await mongoose.connect("mongodb://127.0.0.1:27017/ProjectManagement");
     console.log("✅ MongoDB database connected");
   } catch (err) {
     console.error("❌ MongoDB connection failed:", err);
@@ -44,7 +41,7 @@ const connect = async () => {
 };
 connect();
 
-// ------------------- Nlanciw e serveur -------------------
+// ------------------- nlanciw e serveur -------------------
 app.listen(PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${PORT}`);
 });

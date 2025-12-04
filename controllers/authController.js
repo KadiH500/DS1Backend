@@ -1,98 +1,63 @@
-const User = require('../models/User'); // nimportiw lmodele user
+const User = require('../models/userModel'); // importation mta lmodel user bch tinteracti mta maa l bd
+const bcrypt = require('bcryptjs');          // pour hasher et comparer les psw
+const jwt = require('jsonwebtoken');         // pour créer et vérifier les tokens JWT
 
-// partie manager
+// fonctions d'authentification
 
-// get all user
-const getAllUsers = async (req, res) => {
+// register
+const register = async (req, res) => {
   try {
-    const users = await User.find().select('-password'); // manabathouch l psw
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
-  }
-};
+    const { nom, login, password, role } = req.body;
 
-// get user by id
-const getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
-  }
-};
+    // nverifiw ken fama user existe deja fel base b fared login 
+    const existingUser = await User.findOne({ login });
+    if (existingUser) return res.status(400).json({ message: "Login déjà utilisé" });
 
-// update user
-const updateUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+    // hash mta password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    Object.assign(user, req.body); 
+    // création mta utilisateur jdid
+    const user = new User({ nom, login, password: hashedPassword, role });
     await user.save();
 
-    res.status(200).json({ message: "Utilisateur mis à jour", user });
+    res.status(201).json({ message: "Utilisateur créé", user });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
 
-// delete user
-const deleteUser = async (req, res) => {
+// login 
+const login = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+    const { login, password } = req.body;
 
-    await user.remove();
-    res.status(200).json({ message: "Utilisateur supprimé" });
+    // chercher l'user par login
+    const user = await User.findOne({ login });
+    if (!user) return res.status(400).json({ message: "Login ou mot de passe incorrect" });
+
+    // ncompariw l pswrd bel pswrd hashé fel bd
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Login ou mot de passe incorrect" });
+
+    // creation mta token limite:1j
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+    // nabathou token w infos mta luser
+    res.json({ token, user });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 };
 
-//partie utilisateur
-
-// get
-const getMyProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select('-password'); // manabathouch el psw
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
-  }
+// logout
+const logout = async (req, res) => {
+  // simple message, token reste côté client
+  res.json({ message: "Déconnecté" });
 };
 
-// update
-const updateMyProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    Object.assign(user, req.body); // nupdatiw les champs l tbathou
-    await user.save();
-
-    res.status(200).json({ message: "Profil mis à jour", user });
-  } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
-  }
-};
-
-// delete
-const deleteMyProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    await user.remove();
-    res.status(200).json({ message: "Compte supprimé" });
-  } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
-  }
-};
 
 module.exports = {
-  getAllUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
-  getMyProfile,
-  updateMyProfile,
-  deleteMyProfile
+  register,
+  login,
+  logout
 };

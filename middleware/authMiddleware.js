@@ -1,35 +1,42 @@
+// Middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
 
-// Middleware bech nverifiw token JWT
-const verifyToken = async (req, res, next) => {
-  try {
-    // nrecuperiw token mel header Authorization : "Bearer <token>"
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "Token manquant" });
+// Middleware ll token JWT
+const authenticateToken = (req, res, next) => {
+  // bch nekhdhou token ml header
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; //split en '' ll méthode
 
-    const token = authHeader.split(' ')[1]; 
-    if (!token) return res.status(401).json({ message: "Token manquant" });
-
-    // nverifiw token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded) return res.status(401).json({ message: "Token invalide" });
-
-    // nrecuperiw l user ml bd mn ghir pswd
-    const user = await User.findById(decoded.id).select('-password');
-    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
-
-    req.user = {
-      id: user._id.toString(),
-      role: user.role,
-      login: user.login,
-      nom: user.nom
-    };
-
-    next(); // bech netadew lel middleware lbaedou
-  } catch (err) {
-    res.status(401).json({ message: "Erreur d'authentification", error: err.message });
+  //ken token invalid yabath accées refusè
+  if (!token) {
+    return res.status(401).json({ message: "Accès refusé. Aucun token fourni." });
   }
+
+  // Vérifier le token l defineh f .env
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: "Token invalide ou expiré." });
+    }
+    req.user = user; // najoutiw les informations mta user ll requête
+    next(); 
+  });
 };
 
-module.exports = verifyToken;
+
+// Middleware bch nverifiw bih luser manager wale 
+const isManager = (req, res, next) => {
+  // if loula nchoufou ken user authentifié wale (req.user lezm tkoun defini m authenticateToken kbal next)
+  if (!req.user) {
+    return res.status(401).json({ message: "Utilisateur non authentifié." });
+  }
+
+  // el if thenya ken mahouch manager
+  if (req.user.role !== 'manager') {
+    return res.status(403).json({ message: "Accès refusé. Réservé aux managers." });
+  }
+
+  next(); //net3adew
+};
+
+
+module.exports = { authenticateToken, isManager };

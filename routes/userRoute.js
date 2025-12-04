@@ -1,41 +1,28 @@
 const express = require('express');
-const {
+const { 
   getAllUsers,
   getUserById,
   updateUser,
   deleteUser,
-  getMyProfile,
-  updateMyProfile,
-  deleteMyProfile
-} = require('../controllers/userController');
-const verifyToken = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/roleMiddleware');
+  updateMyProfile 
+} = require('../controllers/userController.js');
+
+const { authenticateToken, isManager } = require('../middleware/authMiddleware'); // middlewares ta3 l'authentification
+
+
+
 
 const router = express.Router();
 
-//partie mta3 lmanager fel crud
+// ===== routes lel admin =====
+// hedhi routes ken manager 
+router.get("/all", authenticateToken, isManager, getAllUsers); // jibli kol l users
+router.get("/:id", authenticateToken, isManager, getUserById); // jibli user par id
+router.put("/:id", authenticateToken, isManager, updateUser); // update user par admin
+router.delete("/:id" ,authenticateToken, isManager, deleteUser); // delete user
 
-// get users 
-router.get("/", verifyToken, roleMiddleware("manager"), getAllUsers);
-
-// get user par ID 
-router.get("/:id", verifyToken, roleMiddleware("manager"), getUserById);
-
-// update user 
-router.put("/:id", verifyToken, roleMiddleware("manager"), updateUser);
-
-// delete user 
-router.delete("/:id", verifyToken, roleMiddleware("manager"), deleteUser);
-
-// paertie user
-
-// get profil
-router.get("/me/profile", verifyToken, getMyProfile);
-
-// update profil
-router.put("/me/profile", verifyToken, updateMyProfile);
-
-// delete compte
-router.delete("/me/profile", verifyToken, deleteMyProfile);
+// ===== routes lel user normal =====
+// hedhi route bech user updati profil mte3ou
+router.put("/me/update", authenticateToken, updateMyProfile);
 
 module.exports = router;
