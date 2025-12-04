@@ -41,7 +41,7 @@
 // userSchema.methods.comparePassword = async function (enteredPassword) {
 //   return await bcrypt.compare(enteredPassword, this.password);
 // };
-
+//************************************************************************************************************** */
 // module.exports = mongoose.model('User', userSchema);
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -57,11 +57,12 @@ const UserSchema = new mongoose.Schema({
 //  Hook pre-save SANS next() car async
 UserSchema.pre('save', async function () {
   // Si le mot de passe n'a pas été modifié → on ne fait rien
-  if (!this.isModified('password')) return;
+  if (!this.isModified('password')) return ;
 
   // Hash du mot de passe
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  
 });
 
 // Export modèle
